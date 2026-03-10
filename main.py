@@ -1,3 +1,4 @@
+import asyncio
 import math
 import random
 import sys
@@ -267,7 +268,7 @@ def draw_hud(surface: pygame.Surface, font: pygame.font.Font, balls: list[Ball],
     surface.blit(label, (16, 12))
 
 
-def main():
+def setup_game():
     pygame.init()
     pygame.display.set_caption("Robot Ball Sorting Simulation")
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -290,6 +291,12 @@ def main():
     balls = create_balls(red_bucket, blue_bucket)
     robot = Robot(WIDTH / 2, HEIGHT / 2)
 
+    return screen, clock, font, red_bucket, blue_bucket, balls, robot
+
+
+def main_desktop():
+    screen, clock, font, red_bucket, blue_bucket, balls, robot = setup_game()
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -306,6 +313,34 @@ def main():
 
         pygame.display.flip()
         clock.tick(FPS)
+
+
+async def main_web():
+    screen, _, font, red_bucket, blue_bucket, balls, robot = setup_game()
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        robot.update(balls, red_bucket, blue_bucket)
+
+        screen.fill(FIELD_GREEN)
+        draw_buckets(screen, red_bucket, blue_bucket)
+        draw_balls(screen, balls)
+        robot.draw(screen)
+        draw_hud(screen, font, balls, robot)
+
+        pygame.display.flip()
+        await asyncio.sleep(0)
+
+
+def main():
+    if sys.platform == "emscripten":
+        asyncio.run(main_web())
+    else:
+        main_desktop()
 
 
 if __name__ == "__main__":

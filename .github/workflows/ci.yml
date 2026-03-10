@@ -1,4 +1,4 @@
-name: WASM Build And Docs Sync
+name: WASM Build And Deploy
 
 on:
   push:
@@ -15,7 +15,13 @@ on:
       - ".github/workflows/ci.yml"
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   wasm-build:
@@ -41,21 +47,30 @@ jobs:
       - name: Build WASM with pygbag
         run: python -m pygbag --build main.py
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Copy build output to docs
         run: |
           rm -rf docs
           mkdir -p docs
           cp -r build/web/. docs/
+          touch docs/.nojekyll
 
-      - name: Upload docs site artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: docs-site
           path: docs/
 
-      - name: Commit updated docs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "ci: update wasm docs build"
-          file_pattern: docs/**
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: wasm-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

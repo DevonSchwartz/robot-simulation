@@ -313,6 +313,7 @@ def main_desktop():
 
         pygame.display.flip()
         clock.tick(FPS)
+    pygame.quit()
 
 
 async def main_web():

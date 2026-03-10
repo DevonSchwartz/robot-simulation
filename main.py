@@ -263,9 +263,25 @@ def draw_hud(surface: pygame.Surface, font: pygame.font.Font, balls: list[Ball],
     else:
         status = "Idle"
 
-    text = f"Delivered: {delivered}/{total}   |   Robot state: {status}"
-    label = font.render(text, True, BLACK)
-    surface.blit(label, (16, 12))
+    info_lines = [
+        "WEB BUILD RUNNING" if sys.platform == "emscripten" else "DESKTOP BUILD RUNNING",
+        f"Delivered: {delivered}/{total}",
+        f"Robot state: {status}",
+        f"Platform: {sys.platform}",
+    ]
+
+    # Draw a small translucent panel so diagnostics remain readable.
+    panel_x, panel_y = 12, 10
+    panel_w = 360
+    line_h = font.get_height() + 2
+    panel_h = len(info_lines) * line_h + 14
+    panel = pygame.Surface((panel_w, panel_h), pygame.SRCALPHA)
+    panel.fill((255, 255, 255, 195))
+    surface.blit(panel, (panel_x, panel_y))
+
+    for i, line in enumerate(info_lines):
+        label = font.render(line, True, BLACK)
+        surface.blit(label, (panel_x + 10, panel_y + 8 + i * line_h))
 
 
 def setup_game():
